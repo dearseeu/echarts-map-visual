@@ -66,7 +66,7 @@ $(function () {
         myTool1: {
           show: true,
           title: '地名',
-          icon: 'path://M432.45,595.444c0,2.177-4.661,6.82-11.305,6.82c-6.475,0-11.306-4.567-11.306-6.82s4.852-6.812,11.306-6.812C427.841,588.632,432.452,593.191,432.45,595.444L432.45,595.444z M421.155,589.876c-3.009,0-5.448,2.495-5.448,5.572s2.439,5.572,5.448,5.572c3.01,0,5.449-2.495,5.449-5.572C426.604,592.371,424.165,589.876,421.155,589.876L421.155,589.876z M421.146,591.891c-1.916,0-3.47,1.589-3.47,3.549c0,1.959,1.554,3.548,3.47,3.548s3.469-1.589,3.469-3.548C424.614,593.479,423.062,591.891,421.146,591.891L421.146,591.891zM421.146,591.891',
+          icon: svg_label,
           onclick: function () {
             var isShowLabel = mychart.getOption().isShowLabel;
             var series = mychart.getOption().series;
@@ -103,8 +103,6 @@ $(function () {
                 isShowLabel: true,
               })
             }
-
-            // console.log(mychart.getOption())
           }
         },
       },
@@ -144,7 +142,10 @@ $(function () {
 
   // 地图下钻
   mychart.on("click", function (params) {
-    let name = params.name, mapCode = country[name], dataIndex = params.seriesIndex; series = [];
+    let name = params.name,
+      mapCode = country[name],
+      dataIndex = params.seriesIndex,
+      seriesName = params.seriesName;
     mapCodeSelect.push(mapCode);
     mapNameSelect.push(name);
     if (name in country) {
@@ -281,9 +282,77 @@ $(function () {
           return;
       }
 
+      var openLeftDiv = {
+        show: true,
+        orient: 'vertical',
+        itemSize:30,
+        left: 0,
+        top: 'center',
+        feature: {
+          myTool1: {
+            show: true,
+            title: '展开',
+            icon: svg_detail,
+            iconStyle: {
+              color: "#5396CE"
+            },
+            onclick: function (params) {
+              var option = mychart.getOption();
+              if (this.model.option.title == "展开") {
+                option.toolbox[1].feature.myTool1.title = '收回';
+                option.toolbox[1].feature.myTool1.icon = svg_withdraw;
+                option.toolbox[1].left = 400;
+                btnLeft(params.option)
+              } else {
+                option.toolbox[1].feature.myTool1.title = '展开';
+                option.toolbox[1].feature.myTool1.icon = svg_detail;
+                option.toolbox[1].left = 0;
+                var detail = $("#detail")[0];
+                detail.style.display = "none";
+              }
+              mychart.setOption(option)
+            }
+          }
+        }
+      }
+
+      var openRightDiv = {
+        show: true,
+        orient: 'vertical',
+        itemSize:30,
+        right: 0,
+        top: 'center',
+        feature: {
+          myTool1: {
+            show: true,
+            title: '展开',
+            icon: svg_withdraw,
+            iconStyle: {
+              color: "#5396CE"
+            },
+            onclick: function () {
+              var option = mychart.getOption();
+              if (this.model.option.title == "展开") {
+                option.toolbox[2].feature.myTool1.title = '收回';
+                option.toolbox[2].feature.myTool1.icon = svg_detail;
+                option.toolbox[2].right = 400;
+                btnRight("")
+              } else {
+                option.toolbox[2].feature.myTool1.title = '展开';
+                option.toolbox[2].feature.myTool1.icon = svg_withdraw;
+                option.toolbox[2].right = 0;
+                var detail_right = $("#detail-right")[0];
+                detail_right.style.display = "none";
+              }
+              mychart.setOption(option)
+            }
+          }
+        }
+      }
+
       // 总览数据配置
       var allToolbox = {
-        toolbox: {
+        toolbox: [{
           top: '2%',
           right: '40%',
           feature: {
@@ -293,18 +362,18 @@ $(function () {
             myTool1: {
               show: true,
               title: '总览',
-              icon: 'path://M764.867148 249.793136 259.0735 249.793136c-143.070486 0-259.052011 115.984594-259.052011 259.052011 0 143.07151 115.982548 259.050987 259.052011 259.050987l505.793648 0c143.067416 0 259.050987-115.979478 259.050987-259.050987C1023.917112 365.778754 907.933541 249.793136 764.867148 249.793136zM259.0735 745.516428c-130.501216 0-236.671281-106.172111-236.671281-236.671281 0-130.501216 106.170065-236.671281 236.671281-236.671281S495.744781 378.344954 495.744781 508.84617C495.744781 639.34534 389.574716 745.516428 259.0735 745.516428z',
+              icon: svg_total,
               onclick: function () {
                 loadMap(mapCode, name, assignOpt(otherToolbox, nowOtherSeries, baseOpt))
+                clearDiv();
               }
             },
             myTool2: {
               show: true,
               title: '地名',
-              icon: 'path://M432.45,595.444c0,2.177-4.661,6.82-11.305,6.82c-6.475,0-11.306-4.567-11.306-6.82s4.852-6.812,11.306-6.812C427.841,588.632,432.452,593.191,432.45,595.444L432.45,595.444z M421.155,589.876c-3.009,0-5.448,2.495-5.448,5.572s2.439,5.572,5.448,5.572c3.01,0,5.449-2.495,5.449-5.572C426.604,592.371,424.165,589.876,421.155,589.876L421.155,589.876z M421.146,591.891c-1.916,0-3.47,1.589-3.47,3.549c0,1.959,1.554,3.548,3.47,3.548s3.469-1.589,3.469-3.548C424.614,593.479,423.062,591.891,421.146,591.891L421.146,591.891zM421.146,591.891',
+              icon: svg_label,
               onclick: function () {
                 var isShowLabel = mychart.getOption().isShowLabel;
-                var series = mychart.getOption().series;
                 if (isShowLabel) {
                   mychart.setOption({
                     isShowLabel: false,
@@ -336,16 +405,15 @@ $(function () {
                     }
                   })
                 }
-
-                // console.log(mychart.getOption())
               }
             },
             myTool3: {
               show: true,
               title: '返回',
-              icon: 'path://M700.371228 394.525472 174.028569 394.525472l255.952416-227.506551c12.389168-11.011798 13.505595-29.980825 2.492774-42.369993-11.011798-12.386098-29.977755-13.506619-42.367947-2.492774L76.425623 400.975371c-6.960529 5.496178-11.434423 14.003945-11.434423 23.561625 0 0.013303 0.001023 0.026606 0.001023 0.039909 0 0.01228-0.001023 0.025583-0.001023 0.037862 0 0.473791 0.01535 0.946558 0.037862 1.418302 0.001023 0.016373 0.001023 0.032746 0.001023 0.049119 0.39295 8.030907 3.992941 15.595186 10.034541 20.962427l315.040163 280.028764c5.717212 5.083785 12.83533 7.580652 19.925818 7.580652 8.274454 0 16.514115-3.403516 22.442128-10.07445 11.011798-12.387122 9.896394-31.357172-2.492774-42.367947l-256.128425-227.665163 526.518668 0c109.219517 0 198.075241 88.855724 198.075241 198.075241s-88.855724 198.075241-198.075241 198.075241L354.324888 850.696955c-16.57449 0-30.011524 13.437034-30.011524 30.011524s13.437034 30.011524 30.011524 30.011524l346.046341 0c142.31631 0 258.098289-115.783003 258.098289-258.098289S842.686515 394.525472 700.371228 394.525472z',
+              icon: svg_back,
               onclick: function () {
                 loadMap(province.yunnan, "云南", YNoption);
+                clearDiv();
               }
             },
 
@@ -353,12 +421,12 @@ $(function () {
           iconStyle: {
             borderColor: '#fff'
           },
-        }
+        }, openLeftDiv, openRightDiv]
       }
 
       // 分布数据配置
       var otherToolbox = {
-        toolbox: {
+        toolbox: [{
           top: '2%',
           right: '40%',
           feature: {
@@ -368,7 +436,7 @@ $(function () {
             myTool1: {
               show: true,
               title: '分布',
-              icon: 'path://M366 294.504c-132 0-240 107.104-240 238s108 238 240 238h304c132 0 240-107.104 240-238s-108-238-240-238h-304z m308 442.16c-111.28 0-201.504-91.408-201.504-204.168s90.224-204.16 201.504-204.16 201.504 91.408 201.504 204.168-90.224 204.16-201.504 204.16z',
+              icon: svg_other,
               onclick: function () {
                 loadMap(
                   mapCode,
@@ -379,12 +447,13 @@ $(function () {
                     baseOpt
                   )
                 )
+                clearDiv();
               }
             },
             myTool2: {
               show: true,
               title: '地名',
-              icon: 'path://M432.45,595.444c0,2.177-4.661,6.82-11.305,6.82c-6.475,0-11.306-4.567-11.306-6.82s4.852-6.812,11.306-6.812C427.841,588.632,432.452,593.191,432.45,595.444L432.45,595.444z M421.155,589.876c-3.009,0-5.448,2.495-5.448,5.572s2.439,5.572,5.448,5.572c3.01,0,5.449-2.495,5.449-5.572C426.604,592.371,424.165,589.876,421.155,589.876L421.155,589.876z M421.146,591.891c-1.916,0-3.47,1.589-3.47,3.549c0,1.959,1.554,3.548,3.47,3.548s3.469-1.589,3.469-3.548C424.614,593.479,423.062,591.891,421.146,591.891L421.146,591.891zM421.146,591.891',
+              icon: svg_label,
               onclick: function () {
                 var isShowLabel = mychart.getOption().isShowLabel;
                 if (isShowLabel) {
@@ -423,16 +492,17 @@ $(function () {
             myTool3: {
               show: true,
               title: '返回',
-              icon: 'path://M700.371228 394.525472 174.028569 394.525472l255.952416-227.506551c12.389168-11.011798 13.505595-29.980825 2.492774-42.369993-11.011798-12.386098-29.977755-13.506619-42.367947-2.492774L76.425623 400.975371c-6.960529 5.496178-11.434423 14.003945-11.434423 23.561625 0 0.013303 0.001023 0.026606 0.001023 0.039909 0 0.01228-0.001023 0.025583-0.001023 0.037862 0 0.473791 0.01535 0.946558 0.037862 1.418302 0.001023 0.016373 0.001023 0.032746 0.001023 0.049119 0.39295 8.030907 3.992941 15.595186 10.034541 20.962427l315.040163 280.028764c5.717212 5.083785 12.83533 7.580652 19.925818 7.580652 8.274454 0 16.514115-3.403516 22.442128-10.07445 11.011798-12.387122 9.896394-31.357172-2.492774-42.367947l-256.128425-227.665163 526.518668 0c109.219517 0 198.075241 88.855724 198.075241 198.075241s-88.855724 198.075241-198.075241 198.075241L354.324888 850.696955c-16.57449 0-30.011524 13.437034-30.011524 30.011524s13.437034 30.011524 30.011524 30.011524l346.046341 0c142.31631 0 258.098289-115.783003 258.098289-258.098289S842.686515 394.525472 700.371228 394.525472z',
+              icon: svg_back,
               onclick: function () {
                 loadMap(province.yunnan, "云南", YNoption);
+                clearDiv();
               }
             }
           },
           iconStyle: {
             borderColor: '#fff'
           }
-        }
+        }, openLeftDiv, openRightDiv]
       }
 
       // 加载对应数据
@@ -445,7 +515,6 @@ $(function () {
           baseOpt
         )
       )
-      // console.log(mychart.getOption());
 
       // 合并option
       function assignOpt(opt, series, toolbox) {
@@ -511,6 +580,371 @@ $(function () {
         return new Object({ series: otherSeries })
       }
 
+      // 左边按钮的弹框
+      function btnLeft(params) {
+        var detail = $("#container").find("#detail").length;
+        if (detail == 0) {
+          var detail_box = $("<div id='detail'></div")
+          detail_box.css({
+            position: "absolute",
+            top: 0,
+            left: 0,
+            height: "100%",
+            width: "400px",
+            background: "rgba(9, 32, 85, 0.5)",
+            color: "#fff",
+            overflow: "hidden",
+            padding: "10px",
+            boxSizing: "border-box"
+          })
+          $("#container").append(detail_box);
+        }
+        if ($("#detail")) {
+          $("#detail").css({
+            display: "block"
+          })
+          var html = `
+          <div style="padding: 5px">
+            <input type="text" class="input">
+          </div>
+          <div style="display: flex;padding: 5px;">
+            <select class="select">
+              <option value="XX县">州市</option>
+              <option value="XX县">州市</option>
+            </select>
+            <select class="select">
+              <option value="XX县">区县</option>
+              <option value="XX县">区县</option>
+            </select>
+            <select class="select">
+              <option value="XX县">隐患</option>
+              <option value="XX县">隐患</option>
+            </select>
+          </div>
+          <div style="margin:15px 0;overflow:auto;height:87%;">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th style="width:40%">${seriesName}</th>
+                  <th>企业类型</th>
+                  <th>企业属地</th>
+                </tr>
+              </thead>
+              <tbody class="tbody">
+               
+              </tbody>
+            </table>
+          </div>
+          `;
+
+          $("#detail").html(html)
+
+          var trs = "", arr = [];
+          switch (dataIndex) {
+            case 0:
+              arr = [
+                ["旅游包车", mapDataJgdxScatterA],
+                ["班线客运", mapDataJgdxScatterB],
+                ["客运站场", mapDataJgdxScatterC],
+                ["危险货物运输", mapDataJgdxScatterD]
+              ]
+              break;
+            case 1:
+              arr = [
+                ["一般隐患", mapDataYhScatterA],
+                ["重大隐患", mapDataYhScatterB]
+              ]
+              break;
+            case 2:
+              arr = [
+                ["一般事故", mapDataSgScatterA],
+                ["较大事故", mapDataSgScatterB],
+                ["重大事故", mapDataSgScatterC],
+                ["特别重大事故", mapDataSgScatterD],
+              ]
+              break;
+            case 3:
+              arr = [
+                ["较小风险", mapDataFxScatterA],
+                ["一般风险", mapDataFxScatterB],
+                ["较大风险", mapDataFxScatterC],
+                ["重大风险", mapDataFxScatterD]
+              ]
+              break;
+            case 4:
+              arr = [
+                ["危险源", mapDataWxyScatter]
+              ]
+              break;
+            case 5:
+              arr = [
+                ["旅游包车", mapDataJdjcScatterA],
+                ["班线客运", mapDataJdjcScatterB],
+                ["客运站场", mapDataJdjcScatterC],
+                ["危险货物运输", mapDataJdjcScatterD],
+              ]
+              break;
+            default:
+              return;
+          };
+
+          // 组装table内容
+          arr.forEach(v => {
+            for (var i = 0; i < v[1].length; i++) {
+              trs += `<tr><td>${v[1][i].name}</td><td>${v[0]}</td><td>县属企业</td></tr>`
+            }
+            return trs;
+          })
+
+          var tbody = $(".tbody");
+          tbody.html(trs);
+
+          var input = $(".input");
+          var select = $(".select");
+          var table = $(".table");
+          var th = $(".table tr th");
+          var td = $(".table tr td");
+          var firstTd = $(".tbody tr td:first-child")
+          input.css({
+            width: " 100%",
+            border: "1px solid #69ACD3",
+            background: "#0A1D44",
+            padding: "8px",
+            boxSizing: "border-box"
+          })
+          select.css({
+            width: "33%",
+            padding: "8px",
+            color: "#fff",
+            background: "#0A1D44",
+            border: "1px solid #69ACD3",
+            marginRight: "2px"
+          })
+          table.css({
+            width: "100%",
+            lineHeight:"25px"
+          })
+          th.css({
+            color: "#EBD36C"
+          })
+          td.css({
+            textAlign: "center",
+            // cursor: "pointer",
+            fontSize: "14px"
+          })
+          firstTd.css({
+            cursor: "pointer"
+          })
+          firstTd.on("click", function () {
+            var title = $(this).html()
+            var option = mychart.getOption();
+            if (option.toolbox[2].feature.myTool1.title == "展开") {
+              option.toolbox[2].feature.myTool1.title = '收回';
+              option.toolbox[2].feature.myTool1.icon = svg_detail;
+              option.toolbox[2].right = 400;
+            }
+            btnRight(title)
+            mychart.setOption(option)
+          })
+        }
+      }
+
+      // 右边按钮弹框
+      function btnRight(title) {
+        var detail_right = $("#container").find("#detail-right").length;
+        if (detail_right == 0) {
+          var detail_box = $("<div id='detail-right'></div")
+          detail_box.css({
+            position: "absolute",
+            top: 0,
+            right: 0,
+            height: "100%",
+            width: "400px",
+            background: "rgba(9, 32, 85, 0.5)",
+            color: "#fff",
+            overflow: "auto",
+            fontSize: "14px",
+            overflow:"hidden", 
+            padding: "10px",
+            boxSizing: "border-box"
+          })
+          $("#container").append(detail_box);
+        }
+        if ($("#detail-right")) {
+          $("#detail-right").css({
+            display: "block"
+          })
+
+          var html = `
+            <h3 style="margin:30px 0;font-size:18px">${title} <a href="#" class="subtitle">详情</a></h3>
+            <div class="addr">地址：云南省</div>
+            <div>
+              <ul class="list" style="text-align:center;margin:10px 0">
+                <li>安全负责人：<span>王大牛</span></li>
+                <li>安全负责人：<span>王大牛</span></li>
+                <li>安全负责人：<span>王大牛</span></li>
+                <li>安全负责人：<span>王大牛</span></li>
+              </ul>
+            </div>
+            <div class="dash-div">
+              运营车辆：<span class="num">128</span>辆，从业人员<span class="num">300</span>人
+            </div>
+            <div>
+              <h3 class="blue">安全生产事故隐患</h3>
+              <table class="right-table">
+                <tr>
+                  <td>日常排查：<span class="blue">45</span>次</td>
+                  <td>日常排查：<span class="blue">45</span>次</td>
+                  <td>日常排查：<span class="blue">45</span>次</td>
+                </tr>
+                <tr>
+                  <td>日常排查：<span class="blue">45</span>次</td>
+                  <td>日常排查：<span class="blue">45</span>次</td>
+                  <td>日常排查：<span class="blue">45</span>次</td>
+                </tr>
+                <tr>
+                  <td>日常排查：<span class="blue">45</span>次</td>
+                  <td>日常排查：<span class="blue">45</span>次</td>
+                  <td>日常排查：<span class="blue">45</span>次</td>
+                </tr>
+              </table>
+            </div>
+            <div style="background: #D7E901;color: #000;margin: 20px 0;padding:12px 0;text-align: center;border-radius: 50px;">
+              发生事故：<span class="blue">1</span>起，死亡：<span class="blue">9</span>人，同比：<span class="blue">6%↑</span>和<span
+                class="blue">24.2%↓</span>
+            </div>
+            <div>
+              <h3 class="blue">安全生产事故隐患</h3>
+              <table class="right-table">
+                <tr>
+                  <td>日常排查：<span class="blue">45</span>次</td>
+                  <td>日常排查：<span class="blue">45</span>次</td>
+                  <td>日常排查：<span class="blue">45</span>次</td>
+                </tr>
+                <tr>
+                  <td>日常排查：<span class="blue">45</span>次</td>
+                  <td>日常排查：<span class="blue">45</span>次</td>
+                  <td>日常排查：<span class="blue">45</span>次</td>
+                </tr>
+                <tr>
+                  <td>日常排查：<span class="blue">45</span>次</td>
+                  <td>日常排查：<span class="blue">45</span>次</td>
+                  <td>日常排查：<span class="blue">45</span>次</td>
+                </tr>
+              </table>
+            </div>
+            <div class="check" style="position: relative;margin:20px 0">
+              <ul style="text-align:center">
+                <li>工作检查</li>
+                <li>工作检查</li>
+                <li>工作检查</li>
+                <li>工作检查</li>
+              </ul>
+              <div class="hover-box">
+                <dl>
+                  <dt>隐患数</dt>
+                  <dd>一般隐患：114个</dd>
+                  <dd>一般隐患：114个</dd>
+                  <dd>一般隐患：114个</dd>
+                </dl>
+                <dl>
+                  <dt>整改情况</dt>
+                  <dd>一般隐患：114个</dd>
+                  <dd>一般隐患：114个</dd>
+                  <dd>一般隐患：114个</dd>
+                </dl>
+              </div>
+            </div>
+          `
+          $("#detail-right").html(html)
+
+          var subtitle = $(".subtitle"),
+            addr = $(".addr"),
+            list = $(".list li"),
+            h3 = $("h3"),
+            table = $(".right-table"),
+            td = $(".right-table tr td"),
+            blue = $(".blue"),
+            check = $(".check ul li"),
+            hoverBox = $(".hover-box"),
+            dashDiv = $(".dash-div");
+
+          subtitle.css({
+            color: "#ddd",
+            fontSize: '13px'
+          })
+          addr.css({
+            textAlign: "center",
+            fontSize: "14px",
+            margin: "10px 0",
+          })
+          list.css({
+            display: "inline-block",
+            marginBottom: "10px",
+            marginRight:"5px",
+            textAlign: "center"
+          })
+          h3.css({
+            textAlign: "center",
+            magin: "10px 0",
+            color: '#41BBFF'
+          })
+          table.css({
+            width: "100%",
+            // fontSize: "12px",
+            border: "1px solid #03A0AB",
+            lineHeight: "30px",
+            textAlign: "center",
+            borderCollapse: "collapse",
+            margin:"10px 0"
+          })
+          td.css({
+            border: "1px solid #03A0AB"
+          })
+          blue.css({
+            color: "#03A0AB",
+            margin: "20px 0"
+          })
+          check.css({
+            display: "inline-block",
+            width: "20%",
+            background: "#213567",
+            padding: "5px 5px"
+          })
+          hoverBox.css({
+            position: "absolute",
+            top: "-215px",
+            left: "70px",
+            background: "rgba(31,63,97,0.8)",
+            padding: "5px 10px",
+            boxSizing: "border-box",
+            display: "none"
+          })
+          dashDiv.css({
+            borderRadius: "50px",
+            padding: "12px 0",
+            border: "1px dotted #D6E904",
+            color: "#D6E904",
+            textAlign: "center",
+            margin: "20px 0"
+          })
+          check.hover(function () {
+            hoverBox.show();
+          }, function () {
+            hoverBox.hide();
+          })
+        }
+      }
+
+      // 清空div
+      function clearDiv() {
+        var detail = $("#detail")[0];
+        if (detail) detail.style.display = "none";
+
+        var detail_right = $("#detail-right")[0];
+        if (detail_right) detail_right.style.display = "none";
+
+      }
     } else {
       return;
     }
@@ -520,166 +954,182 @@ $(function () {
       mapCodeSelect.push(mapCode);
       mapNameSelect.push(name);
 
-      if (params.name in village) {
-        loadMap(mapCode, name, {
-          title: {
-            text: name,
-            textStyle: {
-              color: '#fff'
+      // 判断点击类型
+      if (params.componentType == "geo") {
+        if (params.name in village) {
+          clearDiv();
+          loadMap(mapCode, name, {
+            title: {
+              text: name,
+              textStyle: {
+                color: '#fff'
+              },
+              left: '40%',
+              top: '2%'
             },
-            left: '40%',
-            top: '2%'
-          },
-          backgroundColor: "#020A1D",
-          color: ["#1E90FF", "#13CE66", "#F7BA2A", "#FF4949"],
-          tooltip: {
-            trigger: 'item',
-            formatter: (formatter) => {
-              return formatter.name + "</br>" + formatter.seriesName + "：" + formatter.value[2] + "次"
-            }
-          },
-          toolbox: {
-            top: '2%',
-            right: '40%',
-            feature: {
-              dataView: {},
-              restore: {},
-              saveAsImage: {},
-              myTool1: {
-                show: true,
-                title: '地名',
-                icon: 'path://M432.45,595.444c0,2.177-4.661,6.82-11.305,6.82c-6.475,0-11.306-4.567-11.306-6.82s4.852-6.812,11.306-6.812C427.841,588.632,432.452,593.191,432.45,595.444L432.45,595.444z M421.155,589.876c-3.009,0-5.448,2.495-5.448,5.572s2.439,5.572,5.448,5.572c3.01,0,5.449-2.495,5.449-5.572C426.604,592.371,424.165,589.876,421.155,589.876L421.155,589.876z M421.146,591.891c-1.916,0-3.47,1.589-3.47,3.549c0,1.959,1.554,3.548,3.47,3.548s3.469-1.589,3.469-3.548C424.614,593.479,423.062,591.891,421.146,591.891L421.146,591.891zM421.146,591.891',
-                onclick: function () {
-                  var isShowLabel = mychart.getOption().isShowLabel;
-                  if (isShowLabel) {
-                    mychart.setOption({
-                      geo: {
-                        label: {
-                          normal: {
-                            show: false,
-                          },
-                          emphasis: {
-                            show: false,
-                          }
-                        }
-                      },
-                      isShowLabel: false,
-                    })
-                  } else {
-                    mychart.setOption({
-                      geo: {
-                        label: {
-                          normal: {
-                            show: true,
-                            color: "#fff"
-                          },
-                          emphasis: {
-                            show: true,
-                            color: "#fff"
+            backgroundColor: "#020A1D",
+            color: ["#1E90FF", "#13CE66", "#F7BA2A", "#FF4949"],
+            tooltip: {
+              trigger: 'item',
+              formatter: (formatter) => {
+                return formatter.name + "</br>" + formatter.seriesName + "：" + formatter.value[2] + "次"
+              }
+            },
+            toolbox: {
+              top: '2%',
+              right: '40%',
+              feature: {
+                dataView: {},
+                restore: {},
+                saveAsImage: {},
+                myTool1: {
+                  show: true,
+                  title: '地名',
+                  icon: svg_label,
+                  onclick: function () {
+                    var isShowLabel = mychart.getOption().isShowLabel;
+                    if (isShowLabel) {
+                      mychart.setOption({
+                        geo: {
+                          label: {
+                            normal: {
+                              show: false,
+                            },
+                            emphasis: {
+                              show: false,
+                            }
                           }
                         },
-                      },
-                      isShowLabel: true,
-                    })
+                        isShowLabel: false,
+                      })
+                    } else {
+                      mychart.setOption({
+                        geo: {
+                          label: {
+                            normal: {
+                              show: true,
+                              color: "#fff"
+                            },
+                            emphasis: {
+                              show: true,
+                              color: "#fff"
+                            }
+                          },
+                        },
+                        isShowLabel: true,
+                      })
+                    }
                   }
-                }
+                },
+                myTool2: {
+                  show: true,
+                  title: '返回',
+                  icon: svg_back,
+                  onclick: function () {
+                    loadMap(
+                      mapCodeSelect.pop(),
+                      mapNameSelect.pop(),
+                      assignOpt(
+                        allToolbox,
+                        nowTotalSeries,
+                        baseOpt
+                      ))
+                  }
+                },
               },
-              myTool2: {
-                show: true,
-                title: '返回',
-                icon: 'path://M700.371228 394.525472 174.028569 394.525472l255.952416-227.506551c12.389168-11.011798 13.505595-29.980825 2.492774-42.369993-11.011798-12.386098-29.977755-13.506619-42.367947-2.492774L76.425623 400.975371c-6.960529 5.496178-11.434423 14.003945-11.434423 23.561625 0 0.013303 0.001023 0.026606 0.001023 0.039909 0 0.01228-0.001023 0.025583-0.001023 0.037862 0 0.473791 0.01535 0.946558 0.037862 1.418302 0.001023 0.016373 0.001023 0.032746 0.001023 0.049119 0.39295 8.030907 3.992941 15.595186 10.034541 20.962427l315.040163 280.028764c5.717212 5.083785 12.83533 7.580652 19.925818 7.580652 8.274454 0 16.514115-3.403516 22.442128-10.07445 11.011798-12.387122 9.896394-31.357172-2.492774-42.367947l-256.128425-227.665163 526.518668 0c109.219517 0 198.075241 88.855724 198.075241 198.075241s-88.855724 198.075241-198.075241 198.075241L354.324888 850.696955c-16.57449 0-30.011524 13.437034-30.011524 30.011524s13.437034 30.011524 30.011524 30.011524l346.046341 0c142.31631 0 258.098289-115.783003 258.098289-258.098289S842.686515 394.525472 700.371228 394.525472z',
-                onclick: function () {
-                  loadMap(
-                    mapCodeSelect.pop(),
-                    mapNameSelect.pop(),
-                    assignOpt(
-                      allToolbox,
-                      nowTotalSeries,
-                      baseOpt
-                    ))
-                }
-              },
+              iconStyle: {
+                borderColor: '#fff'
+              }
             },
-            iconStyle: {
-              borderColor: '#fff'
-            }
-          },
-          legend: {
-            orient: "vertical",
-            textStyle: {
-              color: "#fff"
-            },
-            right: "10%",
-            bottom: "2%",
-          },
-          roam: true,
-          geo: {
-            map: name,
-            label: {
-              normal: {
-                show: false,
+            legend: {
+              orient: "vertical",
+              textStyle: {
                 color: "#fff"
               },
-              emphasis: {
-                show: false,
+              right: "10%",
+              bottom: "2%",
+            },
+            roam: true,
+            geo: {
+              map: name,
+              label: {
+                normal: {
+                  show: false,
+                  color: "#fff"
+                },
+                emphasis: {
+                  show: false,
+                  color: "#fff"
+                }
+              },
+              itemStyle: {
+                normal: {
+                  areaColor: "#323c48",
+                  borderColor: "#111"
+                },
+                emphasis: {
+                  areaColor: "#2a333d"
+                }
+              }
+            },
+            visualMap: {
+              min: 0,
+              max: 5,
+              left: '10%',
+              bottom: "2%",
+              text: ["High", "Low"],
+              realtime: false,
+              calculable: true,
+              inRange: {
+                color: ['#1686B9', '#C7992E', '#CD3E46', '#C1D00E', '#AC3E71', '#10A95E'],
+              },
+              textStyle: {
                 color: "#fff"
               }
             },
-            itemStyle: {
-              normal: {
-                areaColor: "#323c48",
-                borderColor: "#111"
+            series: [
+              {
+                type: "scatter",
+                coordinateSystem: "geo",
+                symbol: 'circle',
+                symbolSize: 10,
+                data: mapDataJdjcDetailA,
+                name: '工作检查'
               },
-              emphasis: {
-                areaColor: "#2a333d"
+              {
+                type: "scatter",
+                coordinateSystem: "geo",
+                symbol: 'rect',
+                symbolSize: 10,
+                data: mapDataJdjcDetailB,
+                name: '工作督察'
               }
-            }
-          },
-          visualMap: {
-            min: 0,
-            max: 5,
-            left: '10%',
-            bottom: "2%",
-            text: ["High", "Low"],
-            realtime: false,
-            calculable: true,
-            inRange: {
-              color: ['#1686B9', '#C7992E', '#CD3E46', '#C1D00E', '#AC3E71', '#10A95E'],
-            },
-            textStyle: {
-              color: "#fff"
-            }
-          },
-          series: [
-            {
-              type: "scatter",
-              coordinateSystem: "geo",
-              symbol: 'circle',
-              symbolSize: 10,
-              data: mapDataJdjcDetailA,
-              name: '工作检查'
-            },
-            {
-              type: "scatter",
-              coordinateSystem: "geo",
-              symbol: 'rect',
-              symbolSize: 10,
-              data: mapDataJdjcDetailB,
-              name: '工作督察'
-            }
-          ],
-          isShowLabel: false
-        })
-      } else {
-        return;
+            ],
+            isShowLabel: false
+          })
+        } else {
+          return;
+        }
+      } else if (params.componentType == "series") {
+        var isOther = mychart.getOption().toolbox[0].feature.myTool1.title;
+        if (isOther == "分布") {
+          var option = mychart.getOption();
+          if (option.toolbox[2].feature.myTool1.title == "展开") {
+            option.toolbox[2].feature.myTool1.title = '收回';
+            option.toolbox[2].feature.myTool1.icon = svg_detail;
+            option.toolbox[2].right = 400;
+          }
+          btnRight(name)
+          mychart.setOption(option)
+        }
       }
+
     })
 
   })
 
   // legend图例切换
   mychart.on("legendselectchanged", function (obj) {
-    // console.log(obj);
     // 当前被选中的legend
     var nowLegend = obj.name;
     var visualMapColor = {
