@@ -17,8 +17,10 @@ $(function () {
       name: i[0],
       type: "map",
       mapType: "云南",
-      roam: true,
+      roam: 'move',
       selectedMode: 'single',
+      layoutCenter: ['50%', '50%'],
+      layoutSize: '80%',
       showLegendSymbol: false,
       label: {
         normal: {
@@ -46,7 +48,8 @@ $(function () {
     backgroundColor: "#020A1D",
     color: ['#1686B9', '#C7992E', '#CD3E46', '#C1D00E', '#AC3E71', '#10A95E'],
     tooltip: {
-      trigger: 'item'
+      trigger: 'item',
+      formatter: '{b}<br/>{a}'
     },
     legend: {
       left: 'center',
@@ -56,66 +59,35 @@ $(function () {
         color: '#fff'
       }
     },
-    toolbox: {
-      top: '2%',
-      right: '40%',
-      feature: {
-        dataView: {},
-        restore: {},
-        saveAsImage: {},
-        myTool1: {
-          show: true,
-          title: '地名',
-          icon: svg_label,
-          onclick: function () {
-            var isShowLabel = mychart.getOption().isShowLabel;
-            var series = mychart.getOption().series;
-            if (isShowLabel) {
-              series.forEach(v => {
-                v.label = {
-                  normal: {
-                    show: false,
-                  },
-                  emphasis: {
-                    show: false,
-                  }
-                }
-              })
-              mychart.setOption({
-                series,
-                isShowLabel: false,
-              })
-            } else {
-              series.forEach(v => {
-                v.label = {
-                  normal: {
-                    show: true,
-                    color: '#fff'
-                  },
-                  emphasis: {
-                    show: true,
-                    color: '#2D8BCA'
-                  }
-                }
-              })
-              mychart.setOption({
-                series,
-                isShowLabel: true,
-              })
-            }
-          }
+    toolbox: [
+      {
+        top: '2%',
+        left: '30%',
+        feature: {
+          myTool1: placeName('series')
         },
+        iconStyle: {
+          borderColor: '#fff'
+        }
       },
-      iconStyle: {
-        borderColor: '#fff'
+      {
+        top: '2%',
+        right: '30%',
+        feature: {
+          myTool1: toolboxScale('series', '放大', svg_bigger),
+          myTool2: toolboxScale('series', '缩小', svg_small)
+        },
+        iconStyle: {
+          borderColor: '#fff'
+        }
       }
-    },
+    ],
     title: {
       text: '云南省',
       textStyle: {
         color: '#fff',
       },
-      left: '40%',
+      left: 'center',
       top: '2%'
     },
     visualMap: {
@@ -142,6 +114,7 @@ $(function () {
 
   // 地图下钻
   mychart.on("click", function (params) {
+    console.log(params)
     let name = params.name,
       mapCode = country[name],
       dataIndex = params.seriesIndex,
@@ -157,7 +130,7 @@ $(function () {
           textStyle: {
             color: '#fff'
           },
-          left: '40%',
+          left: 'center',
           top: '2%'
         },
         backgroundColor: "#020A1D",
@@ -171,7 +144,7 @@ $(function () {
               return formatter.name + "：" + formatter.value[2] + "个"
             } else {
               if (formatter.value[2]) {
-                return formatter.name + "</br>" + formatter.seriesName + "：" + formatter.value[2] + "个"
+                return formatter.name + "</>" + formatter.seriesName + "：" + formatter.value[2] + "个"
               } else {
                 return formatter.name + "</br>" + formatter.seriesName
               }
@@ -186,7 +159,7 @@ $(function () {
           right: "10%",
           bottom: "2%",
         },
-        roam: true,
+        roam: 'move',
         geo: {
           map: name,
           label: {
@@ -207,7 +180,9 @@ $(function () {
             emphasis: {
               areaColor: "#2a333d"
             }
-          }
+          },
+          layoutCenter: ['50%', '50%'],
+          layoutSize: '80%'
         },
         isShowLabel: true
       }
@@ -282,10 +257,11 @@ $(function () {
           return;
       }
 
+      // 左侧面板展开 返回 toolbox
       var openLeftDiv = {
         show: true,
         orient: 'vertical',
-        itemSize:30,
+        itemSize: 30,
         left: 0,
         top: 'center',
         feature: {
@@ -298,16 +274,21 @@ $(function () {
             },
             onclick: function (params) {
               var option = mychart.getOption();
-              if (this.model.option.title == "展开") {
+              // var width = mychart.getWidth();
+              // console.log(width)
+              // 如果没有detail 
+              var detail = $("#detail")[0];
+              if (!detail || detail.style.display == "none") {
                 option.toolbox[1].feature.myTool1.title = '收回';
                 option.toolbox[1].feature.myTool1.icon = svg_withdraw;
                 option.toolbox[1].left = 400;
                 btnLeft(params.option)
+                // option.toolbox[1].show = false;
               } else {
                 option.toolbox[1].feature.myTool1.title = '展开';
                 option.toolbox[1].feature.myTool1.icon = svg_detail;
                 option.toolbox[1].left = 0;
-                var detail = $("#detail")[0];
+                // var detail = $("#detail")[0];
                 detail.style.display = "none";
               }
               mychart.setOption(option)
@@ -316,34 +297,84 @@ $(function () {
         }
       }
 
-      var openRightDiv = {
+      // 左侧面板已展开时
+      var leftIsOpenDive = {
         show: true,
         orient: 'vertical',
-        itemSize:30,
-        right: 0,
+        itemSize: 30,
+        left: 15,
         top: 'center',
         feature: {
           myTool1: {
             show: true,
-            title: '展开',
+            title: '关闭',
             icon: svg_withdraw,
             iconStyle: {
               color: "#5396CE"
             },
             onclick: function () {
+              // var option = mychart.getOption();
+              // btnLeft(params.option)
+              clearDiv();
+              // clearLeftDiv();
+              // option.toolbox[1].show = false;
+              // mychart.setOption(option)
+              loadMap(
+                mapCode,
+                name,
+                assignOpt(
+                  otherToolbox(false),
+                  nowOtherSeries,
+                  baseOpt
+                )
+              )
+            }
+          }
+        }
+      }
+
+
+      var openRightDiv = {
+        show: true,
+        orient: 'vertical',
+        itemSize: 30,
+        right: 100,
+        top: 'center',
+        feature: {
+          myTool1: {
+            show: true,
+            title: '收回',
+            icon: svg_detail,
+            iconStyle: {
+              color: "#5396CE"
+            },
+            onclick: function () {
               var option = mychart.getOption();
-              if (this.model.option.title == "展开") {
-                option.toolbox[2].feature.myTool1.title = '收回';
-                option.toolbox[2].feature.myTool1.icon = svg_detail;
-                option.toolbox[2].right = 400;
-                btnRight("")
-              } else {
-                option.toolbox[2].feature.myTool1.title = '展开';
-                option.toolbox[2].feature.myTool1.icon = svg_withdraw;
-                option.toolbox[2].right = 0;
-                var detail_right = $("#detail-right")[0];
-                detail_right.style.display = "none";
+              // if (this.model.option.title == "展开") {
+              //   option.toolbox[2].feature.myTool1.title = '收回';
+              //   option.toolbox[2].feature.myTool1.icon = svg_detail;
+              //   option.toolbox[2].right = 400;
+              //   btnRight("")
+              // } else {
+              // option.toolbox[2].feature.myTool1.title = '展开';
+              option.toolbox[2].feature.myTool1.show = false;
+              // option.toolbox = option.toolbox.slice(0,3)
+              console.log(option.toolbox)
+
+              // option.toolbox[2].right = 0;
+
+
+              var detail_right = $("#detail-right")[0];
+              detail_right.style.display = "none";
+              var detail = $("#detail")[0];
+              // }
+              if (!detail || detail.style.display == 'none') {
+                var dom = mychart.getDom();
+                dom.style.width = '100%'
+                // dom.style.left = '0'
+                mychart.resize()
               }
+
               mychart.setOption(option)
             }
           }
@@ -352,158 +383,116 @@ $(function () {
 
       // 总览数据配置
       var allToolbox = {
-        toolbox: [{
-          top: '2%',
-          right: '40%',
-          feature: {
-            dataView: {},
-            restore: {},
-            saveAsImage: {},
-            myTool1: {
-              show: true,
-              title: '总览',
-              icon: svg_total,
-              onclick: function () {
-                loadMap(mapCode, name, assignOpt(otherToolbox, nowOtherSeries, baseOpt))
-                clearDiv();
-              }
+        toolbox:
+          [
+            {
+              top: '2%',
+              left: '30%',
+              feature: {
+                myTool1: placeName('geo'),
+                myTool2: {
+                  show: true,
+                  title: '总览',
+                  icon: svg_total,
+                  onclick: function () {
+                    loadMap(
+                      mapCode,
+                      name,
+                      assignOpt(
+                        otherToolbox(false),
+                        nowOtherSeries,
+                        baseOpt
+                      )
+                    )
+                    clearDiv();
+                  }
+                },
+              },
+              iconStyle: {
+                borderColor: '#fff'
+              },
             },
-            myTool2: {
-              show: true,
-              title: '地名',
-              icon: svg_label,
-              onclick: function () {
-                var isShowLabel = mychart.getOption().isShowLabel;
-                if (isShowLabel) {
-                  mychart.setOption({
-                    isShowLabel: false,
-                    geo: {
-                      label: {
-                        normal: {
-                          show: false,
-                        },
-                        emphasis: {
-                          show: false,
-                        }
-                      }
-                    }
-                  })
-                } else {
-                  mychart.setOption({
-                    isShowLabel: true,
-                    geo: {
-                      label: {
-                        normal: {
-                          show: true,
-                          color: "#fff"
-                        },
-                        emphasis: {
-                          show: true,
-                          color: "#fff"
-                        }
-                      },
-                    }
-                  })
-                }
+            openLeftDiv,
+            // openRightDiv,
+            {
+              top: '2%',
+              right: '30%',
+              feature: {
+                myTool1: {
+                  show: true,
+                  title: '返回',
+                  icon: svg_back,
+                  onclick: function () {
+                    loadMap(province.yunnan, "云南", YNoption);
+                    clearDiv();
+                  }
+                },
+                myTool2: toolboxScale('geo', '放大', svg_bigger),
+                myTool3: toolboxScale('geo', '缩小', svg_small)
               }
-            },
-            myTool3: {
-              show: true,
-              title: '返回',
-              icon: svg_back,
-              onclick: function () {
-                loadMap(province.yunnan, "云南", YNoption);
-                clearDiv();
-              }
-            },
-
-          },
-          iconStyle: {
-            borderColor: '#fff'
-          },
-        }, openLeftDiv, openRightDiv]
+            }
+          ]
       }
 
       // 分布数据配置
-      var otherToolbox = {
-        toolbox: [{
-          top: '2%',
-          right: '40%',
-          feature: {
-            dataView: {},
-            restore: {},
-            saveAsImage: {},
-            myTool1: {
-              show: true,
-              title: '分布',
-              icon: svg_other,
-              onclick: function () {
-                loadMap(
-                  mapCode,
-                  name,
-                  assignOpt(
-                    allToolbox,
-                    nowTotalSeries,
-                    baseOpt
-                  )
-                )
-                clearDiv();
+      // leftIsOpen:左侧面板是否展开
+      function otherToolbox(leftIsOpen) {
+        var otherToolbox = {
+          toolbox: [
+            {
+              top: '2%',
+              left: '30%',
+              feature: {
+                myTool1: placeName('geo'),
+                myTool2: {
+                  show: true,
+                  title: '分布',
+                  icon: svg_other,
+                  onclick: function () {
+                    loadMap(
+                      mapCode,
+                      name,
+                      assignOpt(
+                        allToolbox,
+                        nowTotalSeries,
+                        baseOpt
+                      )
+                    )
+                    clearDiv();
+                  }
+                },
+              },
+              iconStyle: {
+                borderColor: '#fff'
               }
             },
-            myTool2: {
-              show: true,
-              title: '地名',
-              icon: svg_label,
-              onclick: function () {
-                var isShowLabel = mychart.getOption().isShowLabel;
-                if (isShowLabel) {
-                  mychart.setOption({
-                    isShowLabel: false,
-                    geo: {
-                      label: {
-                        normal: {
-                          show: false,
-                        },
-                        emphasis: {
-                          show: false,
-                        }
-                      }
-                    }
-                  })
-                } else {
-                  mychart.setOption({
-                    isShowLabel: true,
-                    geo: {
-                      label: {
-                        normal: {
-                          show: true,
-                          color: "#fff"
-                        },
-                        emphasis: {
-                          show: true,
-                          color: "#fff"
-                        }
-                      },
-                    }
-                  })
-                }
-              }
-            },
-            myTool3: {
-              show: true,
-              title: '返回',
-              icon: svg_back,
-              onclick: function () {
-                loadMap(province.yunnan, "云南", YNoption);
-                clearDiv();
+            openLeftDiv,
+            // openRightDiv,
+            {
+              top: '2%',
+              right: '30%',
+              feature: {
+                myTool1: {
+                  show: true,
+                  title: '返回',
+                  icon: svg_back,
+                  onclick: function () {
+                    loadMap(province.yunnan, "云南", YNoption);
+                    clearDiv();
+                  }
+                },
+                myTool2: toolboxScale('geo', '放大', svg_bigger),
+                myTool3: toolboxScale('geo', '缩小', svg_small)
               }
             }
-          },
-          iconStyle: {
-            borderColor: '#fff'
-          }
-        }, openLeftDiv, openRightDiv]
+          ]
+        }
+        if (leftIsOpen) {
+          otherToolbox.toolbox[1] = leftIsOpenDive
+        }
+        return otherToolbox
       }
+
 
       // 加载对应数据
       loadMap(
@@ -621,17 +610,18 @@ $(function () {
               <option value="XX县">隐患</option>
             </select>
           </div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>${seriesName}</th>
+                <th>企业类型</th>
+                <th>企业属地</th>
+              </tr>
+            </thead> 
+          </table>
           <div style="margin:15px 0;overflow:auto;height:87%;">
-            <table class="table">
-              <thead>
-                <tr>
-                  <th style="width:40%">${seriesName}</th>
-                  <th>企业类型</th>
-                  <th>企业属地</th>
-                </tr>
-              </thead>
+            <table>
               <tbody class="tbody">
-               
               </tbody>
             </table>
           </div>
@@ -722,7 +712,7 @@ $(function () {
           })
           table.css({
             width: "100%",
-            lineHeight:"25px"
+            lineHeight: "25px"
           })
           th.css({
             color: "#EBD36C"
@@ -733,208 +723,56 @@ $(function () {
             fontSize: "14px"
           })
           firstTd.css({
-            cursor: "pointer"
+            cursor: "pointer",
+            width: "40%"
           })
           firstTd.on("click", function () {
-            var title = $(this).html()
-            var option = mychart.getOption();
-            if (option.toolbox[2].feature.myTool1.title == "展开") {
-              option.toolbox[2].feature.myTool1.title = '收回';
-              option.toolbox[2].feature.myTool1.icon = svg_detail;
-              option.toolbox[2].right = 400;
+            var siblings = $(this).parent().siblings()
+            $(this).css({
+              'color': '#41BBFF'
+            })
+            for (var key in siblings) {
+              // console.log(siblings[key].firstChild)
+              if (siblings[key].firstChild) {
+                siblings[key].firstChild.style.color = '#fff'
+              }
+
             }
-            btnRight(title)
-            mychart.setOption(option)
+            // $(this).style.color = 'red'
+            // $(this).siblings().style.color = 'white'
+            var title = $(this).html()
+            // var option = mychart.getOption();
+            // console.log(option.toolbox)
+            // if (option.toolbox[2].feature.myTool1.title == "展开") {
+            //   option.toolbox[2].feature.myTool1.title = '收回';
+            //   option.toolbox[2].feature.myTool1.icon = svg_detail;
+            //   option.toolbox[2].right = 400;
+            // }
+            // option.toolbox[3] = openRightDiv;
+            // mychart.setOption(option)
+
+            btnRight(title, mychart)
+
+            var dom = mychart.getDom();
+            dom.style.width = '50%'
+            dom.style.left = '25%'
+            mychart.resize()
+
+            loadMap(
+              mapCode,
+              name,
+              assignOpt(
+                otherToolbox(true),
+                nowOtherSeries,
+                baseOpt
+              )
+            )
+            // btnRight(title)
           })
         }
       }
 
-      // 右边按钮弹框
-      function btnRight(title) {
-        var detail_right = $("#container").find("#detail-right").length;
-        if (detail_right == 0) {
-          var detail_box = $("<div id='detail-right'></div")
-          detail_box.css({
-            position: "absolute",
-            top: 0,
-            right: 0,
-            height: "100%",
-            width: "400px",
-            background: "rgba(9, 32, 85, 0.5)",
-            color: "#fff",
-            overflow: "auto",
-            fontSize: "14px",
-            overflow:"hidden", 
-            padding: "10px",
-            boxSizing: "border-box"
-          })
-          $("#container").append(detail_box);
-        }
-        if ($("#detail-right")) {
-          $("#detail-right").css({
-            display: "block"
-          })
 
-          var html = `
-            <h3 style="margin:30px 0;font-size:18px">${title} <a href="#" class="subtitle">详情</a></h3>
-            <div class="addr">地址：云南省</div>
-            <div>
-              <ul class="list" style="text-align:center;margin:10px 0">
-                <li>安全负责人：<span>王大牛</span></li>
-                <li>安全负责人：<span>王大牛</span></li>
-                <li>安全负责人：<span>王大牛</span></li>
-                <li>安全负责人：<span>王大牛</span></li>
-              </ul>
-            </div>
-            <div class="dash-div">
-              运营车辆：<span class="num">128</span>辆，从业人员<span class="num">300</span>人
-            </div>
-            <div>
-              <h3 class="blue">安全生产事故隐患</h3>
-              <table class="right-table">
-                <tr>
-                  <td>日常排查：<span class="blue">45</span>次</td>
-                  <td>日常排查：<span class="blue">45</span>次</td>
-                  <td>日常排查：<span class="blue">45</span>次</td>
-                </tr>
-                <tr>
-                  <td>日常排查：<span class="blue">45</span>次</td>
-                  <td>日常排查：<span class="blue">45</span>次</td>
-                  <td>日常排查：<span class="blue">45</span>次</td>
-                </tr>
-                <tr>
-                  <td>日常排查：<span class="blue">45</span>次</td>
-                  <td>日常排查：<span class="blue">45</span>次</td>
-                  <td>日常排查：<span class="blue">45</span>次</td>
-                </tr>
-              </table>
-            </div>
-            <div style="background: #D7E901;color: #000;margin: 20px 0;padding:12px 0;text-align: center;border-radius: 50px;">
-              发生事故：<span class="blue">1</span>起，死亡：<span class="blue">9</span>人，同比：<span class="blue">6%↑</span>和<span
-                class="blue">24.2%↓</span>
-            </div>
-            <div>
-              <h3 class="blue">安全生产事故隐患</h3>
-              <table class="right-table">
-                <tr>
-                  <td>日常排查：<span class="blue">45</span>次</td>
-                  <td>日常排查：<span class="blue">45</span>次</td>
-                  <td>日常排查：<span class="blue">45</span>次</td>
-                </tr>
-                <tr>
-                  <td>日常排查：<span class="blue">45</span>次</td>
-                  <td>日常排查：<span class="blue">45</span>次</td>
-                  <td>日常排查：<span class="blue">45</span>次</td>
-                </tr>
-                <tr>
-                  <td>日常排查：<span class="blue">45</span>次</td>
-                  <td>日常排查：<span class="blue">45</span>次</td>
-                  <td>日常排查：<span class="blue">45</span>次</td>
-                </tr>
-              </table>
-            </div>
-            <div class="check" style="position: relative;margin:20px 0">
-              <ul style="text-align:center">
-                <li>工作检查</li>
-                <li>工作检查</li>
-                <li>工作检查</li>
-                <li>工作检查</li>
-              </ul>
-              <div class="hover-box">
-                <dl>
-                  <dt>隐患数</dt>
-                  <dd>一般隐患：114个</dd>
-                  <dd>一般隐患：114个</dd>
-                  <dd>一般隐患：114个</dd>
-                </dl>
-                <dl>
-                  <dt>整改情况</dt>
-                  <dd>一般隐患：114个</dd>
-                  <dd>一般隐患：114个</dd>
-                  <dd>一般隐患：114个</dd>
-                </dl>
-              </div>
-            </div>
-          `
-          $("#detail-right").html(html)
-
-          var subtitle = $(".subtitle"),
-            addr = $(".addr"),
-            list = $(".list li"),
-            h3 = $("h3"),
-            table = $(".right-table"),
-            td = $(".right-table tr td"),
-            blue = $(".blue"),
-            check = $(".check ul li"),
-            hoverBox = $(".hover-box"),
-            dashDiv = $(".dash-div");
-
-          subtitle.css({
-            color: "#ddd",
-            fontSize: '13px'
-          })
-          addr.css({
-            textAlign: "center",
-            fontSize: "14px",
-            margin: "10px 0",
-          })
-          list.css({
-            display: "inline-block",
-            marginBottom: "10px",
-            marginRight:"5px",
-            textAlign: "center"
-          })
-          h3.css({
-            textAlign: "center",
-            magin: "10px 0",
-            color: '#41BBFF'
-          })
-          table.css({
-            width: "100%",
-            // fontSize: "12px",
-            border: "1px solid #03A0AB",
-            lineHeight: "30px",
-            textAlign: "center",
-            borderCollapse: "collapse",
-            margin:"10px 0"
-          })
-          td.css({
-            border: "1px solid #03A0AB"
-          })
-          blue.css({
-            color: "#03A0AB",
-            margin: "20px 0"
-          })
-          check.css({
-            display: "inline-block",
-            width: "20%",
-            background: "#213567",
-            padding: "5px 5px"
-          })
-          hoverBox.css({
-            position: "absolute",
-            top: "-215px",
-            left: "70px",
-            background: "rgba(31,63,97,0.8)",
-            padding: "5px 10px",
-            boxSizing: "border-box",
-            display: "none"
-          })
-          dashDiv.css({
-            borderRadius: "50px",
-            padding: "12px 0",
-            border: "1px dotted #D6E904",
-            color: "#D6E904",
-            textAlign: "center",
-            margin: "20px 0"
-          })
-          check.hover(function () {
-            hoverBox.show();
-          }, function () {
-            hoverBox.hide();
-          })
-        }
-      }
 
       // 清空div
       function clearDiv() {
@@ -944,9 +782,21 @@ $(function () {
         var detail_right = $("#detail-right")[0];
         if (detail_right) detail_right.style.display = "none";
 
+        var dom = mychart.getDom();
+        dom.style.width = '100%'
+        dom.style.left = '0'
+        mychart.resize()
       }
-    } else {
-      return;
+      // 清空左侧div
+      function clearLeftDiv() {
+        var detail = $("#detail")[0];
+        if (detail) detail.style.display = "none";
+      }
+      // 清空右侧div
+      function clearRigDiv() {
+        var detail_right = $("#detail-right")[0];
+        if (detail_right) detail_right.style.display = "none";
+      }
     }
 
     mychart.on("click", function (params) {
@@ -954,7 +804,7 @@ $(function () {
       mapCodeSelect.push(mapCode);
       mapNameSelect.push(name);
 
-      // 判断点击类型
+      // 判断点击类型 geo:下钻 series:展开右侧
       if (params.componentType == "geo") {
         if (params.name in village) {
           clearDiv();
@@ -979,48 +829,7 @@ $(function () {
               top: '2%',
               right: '40%',
               feature: {
-                dataView: {},
-                restore: {},
-                saveAsImage: {},
-                myTool1: {
-                  show: true,
-                  title: '地名',
-                  icon: svg_label,
-                  onclick: function () {
-                    var isShowLabel = mychart.getOption().isShowLabel;
-                    if (isShowLabel) {
-                      mychart.setOption({
-                        geo: {
-                          label: {
-                            normal: {
-                              show: false,
-                            },
-                            emphasis: {
-                              show: false,
-                            }
-                          }
-                        },
-                        isShowLabel: false,
-                      })
-                    } else {
-                      mychart.setOption({
-                        geo: {
-                          label: {
-                            normal: {
-                              show: true,
-                              color: "#fff"
-                            },
-                            emphasis: {
-                              show: true,
-                              color: "#fff"
-                            }
-                          },
-                        },
-                        isShowLabel: true,
-                      })
-                    }
-                  }
-                },
+                myTool1: placeName('geo'),
                 myTool2: {
                   show: true,
                   title: '返回',
@@ -1111,20 +920,255 @@ $(function () {
           return;
         }
       } else if (params.componentType == "series") {
-        var isOther = mychart.getOption().toolbox[0].feature.myTool1.title;
-        if (isOther == "分布") {
-          var option = mychart.getOption();
-          if (option.toolbox[2].feature.myTool1.title == "展开") {
-            option.toolbox[2].feature.myTool1.title = '收回';
-            option.toolbox[2].feature.myTool1.icon = svg_detail;
-            option.toolbox[2].right = 400;
+        var tool2 = mychart.getOption().toolbox[0].feature.myTool2
+        if (tool2) {
+          var isOther = mychart.getOption().toolbox[0].feature.myTool2.title;
+          if (isOther == "分布") {
+            var option = mychart.getOption();
+            // console.log(option.toolbox)
+            // option.toolbox[3] = openRightDiv
+
+            // console.log(option.toolbox[1])
+            // option.toolbox[1].left = 10;
+            // if (option.toolbox[2].feature.myTool1.title == "展开") {
+            // option.toolbox[2].feature.myTool1.show = true
+            // option.toolbox[2].feature.myTool1.title = '收回';
+            //   option.toolbox[2].feature.myTool1.icon = svg_detail;
+            //   option.toolbox[2].right = 400;
+            // }
+
+            btnRight(name, mychart)
+            var detail = $("#detail")[0];
+            if (!detail || detail.style.display == 'none') {
+              var dom = mychart.getDom();
+              dom.style.width = '80%'
+              // dom.style.left = '25%'
+              mychart.resize()
+            }
+
+            mychart.setOption(option)
           }
-          btnRight(name)
-          mychart.setOption(option)
         }
+
       }
 
     })
+
+    // 右边按钮弹框
+    function btnRight(title, mychart) {
+      var detail_right = $("#container").find("#detail-right").length;
+      if (detail_right == 0) {
+        var detail_box = $("<div id='detail-right'></div")
+        detail_box.css({
+          position: "absolute",
+          top: 0,
+          right: 0,
+          height: "100%",
+          width: "400px",
+          background: "rgba(9, 32, 85, 0.5)",
+          color: "#fff",
+          overflow: "auto",
+          fontSize: "14px",
+          overflow: "hidden",
+          padding: "10px",
+          boxSizing: "border-box"
+        })
+        $("#container").append(detail_box);
+      }
+      if ($("#detail-right")) {
+        $("#detail-right").css({
+          display: "block"
+        })
+
+        var html = `
+          <div id="closeBtn" style="position:absolute;cursor:pointer;font-weight: bold;">X</div>
+          <h3 style="margin:30px 0;font-size:18px">${title} <a href="#" class="subtitle">详情</a></h3>
+          <div class="addr">地址：云南省</div>
+          <div>
+            <ul class="list" style="text-align:center;margin:10px 0">
+              <li>安全负责人：<span>王大牛</span></li>
+              <li>安全负责人：<span>王大牛</span></li>
+              <li>安全负责人：<span>王大牛</span></li>
+              <li>安全负责人：<span>王大牛</span></li>
+            </ul>
+          </div>
+          <div class="dash-div">
+            运营车辆：<span class="num">128</span>辆，从业人员<span class="num">300</span>人
+          </div>
+          <div>
+            <h3 class="blue">安全生产事故隐患</h3>
+            <table class="right-table">
+              <tr>
+                <td>日常排查：<span class="blue">45</span>次</td>
+                <td>日常排查：<span class="blue">45</span>次</td>
+                <td>日常排查：<span class="blue">45</span>次</td>
+              </tr>
+              <tr>
+                <td>日常排查：<span class="blue">45</span>次</td>
+                <td>日常排查：<span class="blue">45</span>次</td>
+                <td>日常排查：<span class="blue">45</span>次</td>
+              </tr>
+              <tr>
+                <td>日常排查：<span class="blue">45</span>次</td>
+                <td>日常排查：<span class="blue">45</span>次</td>
+                <td>日常排查：<span class="blue">45</span>次</td>
+              </tr>
+            </table>
+          </div>
+          <div style="background: #D7E901;color: #000;margin: 20px 0;padding:12px 0;text-align: center;border-radius: 50px;">
+            发生事故：<span class="blue">1</span>起，死亡：<span class="blue">9</span>人，同比：<span class="blue">6%↑</span>和<span
+              class="blue">24.2%↓</span>
+          </div>
+          <div>
+            <h3 class="blue">安全生产事故隐患</h3>
+            <table class="right-table">
+              <tr>
+                <td>日常排查：<span class="blue">45</span>次</td>
+                <td>日常排查：<span class="blue">45</span>次</td>
+                <td>日常排查：<span class="blue">45</span>次</td>
+              </tr>
+              <tr>
+                <td>日常排查：<span class="blue">45</span>次</td>
+                <td>日常排查：<span class="blue">45</span>次</td>
+                <td>日常排查：<span class="blue">45</span>次</td>
+              </tr>
+              <tr>
+                <td>日常排查：<span class="blue">45</span>次</td>
+                <td>日常排查：<span class="blue">45</span>次</td>
+                <td>日常排查：<span class="blue">45</span>次</td>
+              </tr>
+            </table>
+          </div>
+          <div class="check" style="position: relative;margin:20px 0">
+            <ul style="text-align:center">
+              <li>工作检查</li>
+              <li>工作检查</li>
+              <li>工作检查</li>
+              <li>工作检查</li>
+            </ul>
+            <div class="hover-box">
+              <dl>
+                <dt>隐患数</dt>
+                <dd>一般隐患：114个</dd>
+                <dd>一般隐患：114个</dd>
+                <dd>一般隐患：114个</dd>
+              </dl>
+              <dl>
+                <dt>整改情况</dt>
+                <dd>一般隐患：114个</dd>
+                <dd>一般隐患：114个</dd>
+                <dd>一般隐患：114个</dd>
+              </dl>
+            </div>
+          </div>
+        `
+        $("#detail-right").html(html)
+
+        var subtitle = $(".subtitle"),
+          addr = $(".addr"),
+          list = $(".list li"),
+          h3 = $("h3"),
+          table = $(".right-table"),
+          td = $(".right-table tr td"),
+          blue = $(".blue"),
+          check = $(".check ul li"),
+          hoverBox = $(".hover-box"),
+          dashDiv = $(".dash-div");
+
+        subtitle.css({
+          color: "#ddd",
+          fontSize: '13px'
+        })
+        addr.css({
+          textAlign: "center",
+          fontSize: "14px",
+          margin: "10px 0",
+        })
+        list.css({
+          display: "inline-block",
+          marginBottom: "10px",
+          marginRight: "5px",
+          textAlign: "center"
+        })
+        h3.css({
+          textAlign: "center",
+          magin: "10px 0",
+          color: '#41BBFF'
+        })
+        table.css({
+          width: "100%",
+          // fontSize: "12px",
+          border: "1px solid #03A0AB",
+          lineHeight: "30px",
+          textAlign: "center",
+          borderCollapse: "collapse",
+          margin: "10px 0"
+        })
+        td.css({
+          border: "1px solid #03A0AB"
+        })
+        blue.css({
+          color: "#03A0AB",
+          margin: "20px 0"
+        })
+        check.css({
+          display: "inline-block",
+          width: "20%",
+          background: "#213567",
+          padding: "5px 5px"
+        })
+        hoverBox.css({
+          position: "absolute",
+          top: "-215px",
+          left: "70px",
+          background: "rgba(31,63,97,0.8)",
+          padding: "5px 10px",
+          boxSizing: "border-box",
+          display: "none"
+        })
+        dashDiv.css({
+          borderRadius: "50px",
+          padding: "12px 0",
+          border: "1px dotted #D6E904",
+          color: "#D6E904",
+          textAlign: "center",
+          margin: "20px 0"
+        })
+        check.hover(function () {
+          hoverBox.show();
+        }, function () {
+          hoverBox.hide();
+        })
+        $("#closeBtn").click(function(){
+          if($("#detail-right")){
+            $("#detail-right").css({
+              display:'none'
+            })
+          }
+          var detail = $("#detail")[0];
+          // }
+          if (!detail || detail.style.display == 'none') {
+            var dom = mychart.getDom();
+            dom.style.width = '100%'
+            // dom.style.left = '0'
+            mychart.resize()
+          }
+        })
+      }
+      // 设置按钮
+      // var option = mychart.getOption();
+      // if (option.toolbox.length == 3) {//添加
+      //   option.toolbox[3] = openRightDiv
+      //   mychart.setOption(option)
+      // } else if (option.toolbox.length == 4) {
+      //   // debugger
+      //   console.log(111)
+      //   option.toolbox[3].feature.myTool1.show = true
+      //   // mychart.setOption(option)
+      // }
+
+
+    }
 
   })
 
@@ -1172,5 +1216,137 @@ $(function () {
     })
   }
 
-})
+  // 工具箱
+  // 放大 | 缩小
+  function toolboxScale(type, title, svg) {
+    if (type == 'series') {
+      return {
+        show: true,
+        title: title,
+        icon: svg,
+        onclick: function () {
+          var arr = mychart.getOption().series
+          arr.forEach(v => {
+            var odlSize = parseInt(v.layoutSize.slice(0, v.layoutSize.length - 1))
+            odlSize = isBigOrSmall(title, odlSize)
+            v.layoutSize = odlSize
+          })
+          mychart.setOption({ series: arr })
+        }
+      }
+    } else if (type == "geo") {
+      return {
+        show: true,
+        title: title,
+        icon: svg_bigger,
+        onclick: function () {
+          var geo = mychart.getOption().geo[0]
+          var odlSize = parseInt(geo.layoutSize.slice(0, geo.layoutSize.length - 1))
+          odlSize = isBigOrSmall(title, odlSize)
+          geo.layoutSize = odlSize
+          mychart.setOption({ geo })
+        }
+      }
+    }
+  }
+  function isBigOrSmall(title, odlSize) {
+    if (title == '放大') { odlSize += 10 }
+    else { odlSize -= 10 }
+    if (odlSize >= 150) {
+      odlSize = '150%'
+    } else if (odlSize <= 50) {
+      odlSize = '50%'
+    } else {
+      odlSize = odlSize + '%'
+    }
+    return odlSize
+  }
+  // 地名
+  function placeName(type) {
+    if (type == 'series') {
+      return {
+        show: true,
+        title: '地名',
+        icon: svg_label,
+        onclick: function () {
+          var isShowLabel = mychart.getOption().isShowLabel;
+          var series = mychart.getOption().series;
+          if (isShowLabel) {
+            series.forEach(v => {
+              v.label = {
+                normal: {
+                  show: false,
+                },
+                emphasis: {
+                  show: false,
+                }
+              }
+            })
+            mychart.setOption({
+              series,
+              isShowLabel: false,
+            })
+          } else {
+            series.forEach(v => {
+              v.label = {
+                normal: {
+                  show: true,
+                  color: '#fff'
+                },
+                emphasis: {
+                  show: true,
+                  color: '#2D8BCA'
+                }
+              }
+            })
+            mychart.setOption({
+              series,
+              isShowLabel: true,
+            })
+          }
+        }
+      }
+    } else {
+      return {
+        show: true,
+        title: '地名',
+        icon: svg_label,
+        onclick: function () {
+          var isShowLabel = mychart.getOption().isShowLabel;
+          if (isShowLabel) {
+            mychart.setOption({
+              isShowLabel: false,
+              geo: {
+                label: {
+                  normal: {
+                    show: false,
+                  },
+                  emphasis: {
+                    show: false,
+                  }
+                }
+              }
+            })
+          } else {
+            mychart.setOption({
+              isShowLabel: true,
+              geo: {
+                label: {
+                  normal: {
+                    show: true,
+                    color: "#fff"
+                  },
+                  emphasis: {
+                    show: true,
+                    color: "#fff"
+                  }
+                },
+              }
+            })
+          }
+        }
+      }
+    }
 
+  }
+})
